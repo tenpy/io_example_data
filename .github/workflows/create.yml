@@ -1,0 +1,48 @@
+name: Create missing dataset
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.versions }}
+    steps:
+
+      - name: Checkout tenpy
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # required to get all tags
+
+      - id: matrix
+        name: Check for missing I/O datasets
+        run: |
+          missing_versions=()
+          git tag | while read version; do
+            [[ $version != v* ]] && continue  # skip non-version tags
+            [[ $version == v0.* ]] && continue  # skip v0.* versions: don't have data for all.
+            bare_version=${version#v}
+            if [ ! -f "tests/export_import_test/data/exported_from_tenpy_$bare_version.pkl"]; then
+              missing_versions+=($version)
+            elif [ ! -f "tests/export_import_test/data/exported_from_tenpy_$bare_version.hdf5"]; then
+              missing_versions+=($version)
+            fi
+          done
+          echo "missing versions: $versions"
+          echo "versions=($versions)" >> $GITHUB_OUTPUT
+
+  create-data:
+    needs: [diagnose]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        value: ${{ fromJson(needs.diagnose.outputs.matrix) }}
+    steps:
+
+      - name: Test
+        run: |
+          echo "${{ matrix.value }}"
+
+  # FIXME collect all data, commit, push, PR, notify
