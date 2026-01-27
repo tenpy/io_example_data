@@ -59,6 +59,7 @@ jobs:
   create:
     needs: [detect]
     runs-on: ubuntu-latest
+    if: ${{ needs.detect.outputs.matrix != [""] }}
     strategy:
       matrix:
         version: ${{ fromJson(needs.detect.outputs.matrix) }}
