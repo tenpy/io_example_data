@@ -25,6 +25,8 @@ jobs:
           bare_versions=""
           for version in $(git tag); do
             [[ $version != v* ]] && echo "Skipping non-version tag: $version" && continue
+            [[ $version =~ v0.(1|2|3).0 ]] && echo "Skipping $version (too old)" && continue
+            [[ $version =~ v0.(4.1|5.0) ]] && echo "Skipping $version with broken test" && continue
             echo "Adding: $version"
             bare_versions="$bare_versions ${version#v}"
           done
@@ -75,14 +77,32 @@ jobs:
           repository: tenpy/tenpy
           path: tenpy_repo
 
-      - name: Set up Python 3.14
+      - name: Pin versions
+        run: |
+          if [[ ${{ matrix.version }} =~ 0.(4|5|6|7).[0-9] ]]; then
+            echo "numpy_spec=numpy<1.26" >> $GITHUB_ENV
+            echo "scipy_spec=scipy<1.8" >> $GITHUB_ENV
+            echo "python_spec=3.10" >> $GITHUB_ENV
+          else
+            echo "numpy_spec=numpy" >> $GITHUB_ENV
+            echo "scipy_spec=scipy" >> $GITHUB_ENV
+            echo "python_spec=3.14" >> $GITHUB_ENV
+          fi
+
+          if [[ ${{ matrix.version }} == 0.4.0 ]]; then
+            echo "extra_pkgs=pylab" >> $GITHUB_ENV
+          else
+            echo 'extra_pkgs=""' >> $GITHUB_ENV
+          fi
+
+      - name: Set up Python ${{ env.python_spec }}
         uses: actions/setup-python@v6
         with:
-          python-version: 3.14
+          python-version: ${{ env.python_spec }}
 
       - name: Install dependencies
         run: |
-          pip install numpy scipy pytest h5py
+          pip install $numpy_spec $scipy_spec pytest h5py $extra_pkgs
 
       - name: Generate datasets
         run: |
