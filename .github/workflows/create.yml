@@ -28,6 +28,7 @@ jobs:
           bare_versions=""
           for version in $(git tag); do
             [[ $version != v* ]] && echo "Skipping non-version tag: $version" && continue
+            [[ $version =~ v0.(1|2|3).0 ]] && echo "Skipping $version (too old, no export code)" && continue
             echo "Adding: $version"
             bare_versions="$bare_versions ${version#v}"
           done
@@ -78,14 +79,46 @@ jobs:
           repository: tenpy/tenpy
           path: tenpy_repo
 
-      - name: Set up Python 3.14
+      - name: Pin versions
+        run: |
+          if [[ ${{ matrix.version }} =~ 0.(4|5|6|7).[0-9] ]]; then
+            echo "numpy_version=1.19" >> $GITHUB_ENV
+            echo "scipy_version=1.8" >> $GITHUB_ENV
+            echo "python_version=3.9" >> $GITHUB_ENV
+          elif [[ ${{ matrix.version }} =~ 0.(8|9|10|11|99).[0-9] ]] || [[ ${{ matrix.version }} =~ 1.0.[0-2] ]]; then
+            echo "numpy_version=1.26" >> $GITHUB_ENV
+            echo "scipy_version=1.10" >> $GITHUB_ENV
+            echo "python_version=3.10" >> $GITHUB_ENV
+          else
+            echo "numpy_version=2.3.2" >> $GITHUB_ENV
+            echo "scipy_version=1.16.1" >> $GITHUB_ENV
+            echo "python_version=3.13" >> $GITHUB_ENV
+          fi
+
+      - name: Remove unused pylab imports
+        if: matrix.version == '0.4.0'
+        # v0.4.0 imports pylab but does not use it.
+        # rather than figuring out how to install it, we just remove the unused import statement
+        # also remove bugged lines from the __main__ block of test_pickle.py
+        run: |
+          sed -i '/import pylab as pl/d' tenpy_repo/tenpy/algorithms/tdvp.py
+          sed -i '/import pylab as pl/d' tenpy_repo/tests/tdvp_numpy.py
+
+      - name: Fix export_import script
+        if: matrix.version == '0.4.0' || matrix.version == '0.4.1' || matrix.version == '0.5.0'
+        # there are two lines in the __main__ block that seem outdated and need to be removed
+        run: |
+          sed -i '/for f, fn in test_data_import():/d' tenpy_repo/tests/export_import_test/test_pickle.py
+          sed -i '/f(fn)/d' tenpy_repo/tests/export_import_test/test_pickle.py
+
+      - name: Set up Python ${{ env.python_version }}
         uses: actions/setup-python@v6
         with:
-          python-version: 3.14
+          python-version: ${{ env.python_version }}
 
       - name: Install dependencies
         run: |
-          pip install numpy scipy pytest h5py
+          pip install numpy==$numpy_version scipy==$scipy_version pytest h5py
 
       - name: Generate datasets
         run: |
@@ -98,7 +131,7 @@ jobs:
           fi
 
           if [ ! -d tenpy_repo/tests/export_import_test/data ]; then
-            echo "No data was generated."
+            echo "No data was generated." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
