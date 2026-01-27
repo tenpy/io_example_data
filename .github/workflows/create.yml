@@ -148,7 +148,7 @@ jobs:
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           title: Add dataset for v${{ matrix.version }}
           body: This PR is automatically created by the create.yml workflow
-          reviewers: Jakob-Unfried
+          reviewers: Jakob-Unfried,jhauschild
           base: main
           delete-branch: true
           branch: create-v${{ matrix.version }}
