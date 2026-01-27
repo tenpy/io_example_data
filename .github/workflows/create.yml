@@ -25,7 +25,6 @@ jobs:
           bare_versions=""
           for version in $(git tag); do
             [[ $version != v* ]] && echo "Skipping non-version tag: $version" && continue
-            [[ $version == v0.* ]] && echo "Skipping: $version" && continue
             echo "Adding: $version"
             bare_versions="$bare_versions ${version#v}"
           done
@@ -87,8 +86,12 @@ jobs:
       - name: Generate datasets
         run: |
           export PYTHONPATH="$PYTHONPATH:${{ github.workspace }}/tenpy_repo"
-          python tenpy_repo/tests/export_import_test/test_hdf5.py
-          python tenpy_repo/tests/export_import_test/test_pickle.py
+          if [ -f tenpy_repo/tests/export_import_test/test_hdf5.py ]; then
+            python tenpy_repo/tests/export_import_test/test_hdf5.py
+          fi
+          if [ -f tenpy_repo/tests/export_import_test/test_pickle.py ]; then
+            python tenpy_repo/tests/export_import_test/test_pickle.py
+          fi
 
       - name: Move datasets
         run: |
