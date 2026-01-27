@@ -99,6 +99,13 @@ jobs:
             exit 1
           fi
 
+      - name: Rename datasets
+        if: matrix.version == '0.4.0' || matrix.version == '0.4.1' || matrix.version == '0.5.0'
+        # the naming convention for the files changed in 0.6.0
+        run: |
+          mv tenpy_repo/tests/export_import_test/data/pickled_from_tenpy_v${{ matrix.version }}.pkl \
+            tenpy_repo/tests/export_import_test/data/exported_from_tenpy_v${{ matrix.version }}.pkl
+
       - name: Move datasets
         run: |
           mv tenpy_repo/tests/export_import_test/data/* data
