@@ -6,4 +6,4 @@ Specifically the [I/O test](https://github.com/tenpy/tenpy/tree/main/tests/expor
 
 There is an workflow / Github Action that can automatically generate datasets for missing
 versions, up to creating a PR.
-It currently needs to be triggered manually (from the Actions tab of the repo).
+It currently needs to be [triggered manually](https://github.com/tenpy/io_example_data/actions/workflows/create.yml).
