@@ -60,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.detect.outputs.matrix != '[""]' }}
     strategy:
+      fail-fast: false
       matrix:
         version: ${{ fromJson(needs.detect.outputs.matrix) }}
     steps:
@@ -91,6 +92,11 @@ jobs:
           fi
           if [ -f tenpy_repo/tests/export_import_test/test_pickle.py ]; then
             python tenpy_repo/tests/export_import_test/test_pickle.py
+          fi
+
+          if [ ! -d tenpy_repo/tests/export_import_test/data ]; then
+            echo "No data was generated."
+            exit 1
           fi
 
       - name: Move datasets
