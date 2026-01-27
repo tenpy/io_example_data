@@ -41,10 +41,10 @@ jobs:
             echo "Checking: $version"
             pkl_file="data/exported_from_tenpy_$version.pkl"
             hdf5_file="data/exported_from_tenpy_$version.hdf5"
-            if [ ! -f $pkl_file ]; then
+            if [ ! -f $pkl_file ] && [ -f tenpy_repo/tests/export_import_test/test_pickle.py ]; then
               echo "  $pkl_file missing"
               missing_versions="$missing_versions $version"
-            elif [ ! -f $hdf5_file ]; then
+            elif [ ! -f $hdf5_file ] && [ -f tenpy_repo/tests/export_import_test/test_hdf5.py ]; then
               echo "  $hdf5_file missing"
               missing_versions="$missing_versions $version"
             fi
