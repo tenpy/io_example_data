@@ -2,7 +2,7 @@
 
 This repo exists to provide data for tests of https://github.com/tenpy/tenpy.
 
-Specifically the I/O tests at https://github.com/tenpy/tenpy
+Specifically the [I/O test](https://github.com/tenpy/tenpy/tree/main/tests/export_import_test).
 
 There is an workflow / Github Action that can automatically generate datasets for missing
 versions, up to creating a PR.
