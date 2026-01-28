@@ -60,6 +60,9 @@ jobs:
     needs: [detect]
     runs-on: ubuntu-latest
     if: ${{ needs.detect.outputs.matrix != '[""]' }}
+    defaults:
+      run:
+        shell: bash -el {0}
     strategy:
       fail-fast: false
       matrix:
@@ -75,22 +78,6 @@ jobs:
           ref: v${{ matrix.version }}
           repository: tenpy/tenpy
           path: tenpy_repo
-
-      - name: Pin versions
-        run: |
-          if [[ ${{ matrix.version }} =~ 0.(4|5|6|7).[0-9] ]]; then
-            echo "numpy_version=1.19.2" >> $GITHUB_ENV
-            echo "scipy_version=1.5.2" >> $GITHUB_ENV
-            echo "python_version=3.9" >> $GITHUB_ENV
-          elif [[ ${{ matrix.version }} =~ 0.(8|9|10|11|99).[0-9] ]] || [[ ${{ matrix.version }} =~ 1.0.[0-2] ]]; then
-            echo "numpy_version=1.26" >> $GITHUB_ENV
-            echo "scipy_version=1.10" >> $GITHUB_ENV
-            echo "python_version=3.10" >> $GITHUB_ENV
-          else
-            echo "numpy_version=2.3.2" >> $GITHUB_ENV
-            echo "scipy_version=1.16.1" >> $GITHUB_ENV
-            echo "python_version=3.13" >> $GITHUB_ENV
-          fi
 
       - name: Remove unused pylab imports
         if: matrix.version == '0.4.0'
@@ -108,14 +95,24 @@ jobs:
           sed -i '/for f, fn in test_data_import():/d' tenpy_repo/tests/export_import_test/test_pickle.py
           sed -i '/f(fn)/d' tenpy_repo/tests/export_import_test/test_pickle.py
 
-      - name: Set up Python ${{ env.python_version }}
-        uses: actions/setup-python@v6
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ env.python_version }}
+          auto-update-conda: true
+          channels: conda-forge,defaults
+          channel-priority: true
 
       - name: Install dependencies
+        # note: always pin specific versions, to future proof the environment!
         run: |
-          pip install numpy==$numpy_version scipy==$scipy_version pytest h5py
+          if [[ ${{ matrix.version }} =~ 0.(4|5|6|7).[0-9] ]]; then
+            conda install -y python==3.9 numpy==1.19.2 scipy==1.5.2
+          elif [[ ${{ matrix.version }} =~ 0.(8|9|10|11|99).[0-9] ]] || [[ ${{ matrix.version }} =~ 1.0.[0-2] ]]; then
+            conda install -y python==3.10 numpy==1.26.4 scipy==1.10.1
+          else
+            conda install -y python==3.13 numpy==2.3.2 scipy==1.16.1
+          fi
+          conda install pytest h5py
 
       - name: Generate datasets
         run: |
